@@ -40,7 +40,7 @@
                     <select id="scriptSelect" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
                         <option value="tb">暗流涌动 (Trouble Brewing)</option>
                         <option value="bmr">暗月初升 (Bad Moon Rising)</option>
-                        <option value="snv">梦陨春宵 (Sects & Violets)</option>
+                        <option value="snv">梦殒春宵 (Sects & Violets)</option>
                     </select>
                 </div>
             </div>
@@ -158,11 +158,11 @@
                 demons: ["僵怖", "普卡", "沙巴洛斯", "珀"]
             },
             "snv": {
-                name: "梦陨春宵 (Sects & Violets)",
-                townsfolk: ["钟表匠", "梦妖", "弄蛇人", "数学家", "卖花女孩", "城镇公告员", "神谕者", "学者", "裁缝", "哲学家", "艺术家", "杂耍演员", "智者"],
-                outsiders: ["突变异种", "理发师", "甜心", "呆瓜"],
-                minions: ["邪恶双子", "女巫", "洗脑师", "麻脸巫婆"],
-                demons: ["方古", "维戈莫提斯", "诺达许", "涡流"]
+                name: "梦殒春宵 (Sects & Violets)",
+                townsfolk: ["钟表匠", "筑梦师", "舞蛇人", "数学家", "卖花女孩", "城镇公告员", "神谕者", "博学者", "女裁缝", "哲学家", "艺术家", "杂耍艺人", "贤者"],
+                outsiders: ["畸形秀演员", "理发师", "心上人", "呆瓜"],
+                minions: ["镜像双子", "女巫", "洗脑师", "麻脸巫婆"],
+                demons: ["方古", "亡骨魔", "诺-达鲺", "涡流"]
             }
         };
 
@@ -381,7 +381,7 @@
                     if (finalD.includes("涡流")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【涡流】</span>：所有好人得到的信息都是假的！说书人必须给出完全相反的信息，这将考验好人是否能快速发现涡流局。</li>`);
                     if (finalD.includes("方古")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【方古】</span>：恶魔可以跳跃到外乡人身上。外乡人在此局中不仅是累赘，更是潜在的巨大威胁。</li>`);
                     if (finalM.includes("麻脸巫婆") || finalM.includes("洗脑师")) aiComments.push(`<li>💡 <span class="text-white font-bold">强控制</span>：爪牙的控制力极强，可以通过改变身份或疯狂状态将好人的逻辑彻底撕裂。</li>`);
-                    if (finalT.includes("艺术家") || finalT.includes("学者")) aiComments.push(`<li>💡 <span class="text-white font-bold">信息爆发</span>：艺术家和学者能提供具有终结比赛能力的信息，邪恶方必须优先找到并解决他们。</li>`);
+                    if (finalT.includes("艺术家") || finalT.includes("博学者")) aiComments.push(`<li>💡 <span class="text-white font-bold">信息爆发</span>：艺术家和博学者能提供具有终结比赛能力的信息，邪恶方必须优先找到并解决他们。</li>`);
                 }
 
                 aiComments.push(`<li>🎯 <span class="text-white font-bold">综合评价</span>：这个板子${Math.random() > 0.5 ? "对抗性很强，双方都有充足的操作空间。" : "极其考验逻辑推理，信息的真假交织将是游戏核心。"}开局后可在“场控平衡建议”动态调整局势。</li>`);
@@ -448,7 +448,7 @@
                     html += `<ul class="list-disc pl-6 space-y-2 text-gray-300 mb-5">`;
                     html += `<li><span class="text-white font-bold">标准裁决</span>：完全按照标准概率和客观规则发放信息。</li>`;
                     html += `<li><span class="text-white font-bold">关注边缘玩家</span>：通过非致命夜间互动拉升边缘玩家的参与感。</li>`;
-                    if (hasDrunk) html += `<li><span class="text-white font-bold">常规干扰</span>：维持常态的醉酒/中毒干扰，真假参半。</li>`;
+                    if (hasDrunk) html += `<li><span class=\"text-white font-bold\">常规干扰</span>：维持常态的醉酒/中毒干扰，真假参半。</li>`;
                     html += `</ul>`;
                     html += `<div class="p-3 bg-gray-800 rounded border border-gray-600 text-sm">💡 <span class="text-white font-bold">说书人座右铭</span>：最好的控场就是让玩家感觉不到你在控场。让他们为自己的推理和欺诈欢呼！</div>`;
                 }
