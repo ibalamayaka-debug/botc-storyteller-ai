@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血染钟楼 - AI说书人平衡助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Serif SC', serif; background-color: #1a1a1a; background-image: radial-gradient(#2d1b1b 1px, transparent 1px); background-size: 20px 20px; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #e53e3e; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen p-4 md:p-8 flex justify-center items-start">
+    <div class="max-w-2xl w-full bg-gray-900 border border-red-900 p-6 md:p-10 rounded-2xl shadow-2xl relative overflow-hidden mt-10">
+        <!-- Decoration -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-800 via-red-500 to-red-800"></div>
+        
+        <h1 class="text-3xl md:text-4xl font-black mb-2 text-center text-red-500 tracking-wider">血染钟楼</h1>
+        <h2 class="text-xl md:text-2xl font-bold mb-8 text-center text-gray-400">AI 说书人平衡助手</h2>
+        
+        <div class="space-y-6">
+            <!-- 游戏阶段 -->
+            <div>
+                <label class="block mb-2 font-bold text-red-400 text-lg">当前游戏阶段</label>
+                <select id="phase" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                    <option value="early">🌙 游戏前期 (第1-2天，信息收集中)</option>
+                    <option value="mid">🔥 游戏中期 (第3-4天，逻辑交锋期)</option>
+                    <option value="late">⚔️ 游戏后期 (赛点/最后一天，决战)</option>
+                </select>
+            </div>
+
+            <!-- 局面倾向 -->
+            <div>
+                <label class="block mb-2 font-bold text-red-400 text-lg">当前局面倾向</label>
+                <select id="advantage" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                    <option value="good_strong">🔵 好人优势极大 (恶魔被锁定/邪恶方暴露)</option>
+                    <option value="balanced">⚖️ 势均力敌 (局势焦灼，胜负难分)</option>
+                    <option value="evil_strong">🔴 邪恶优势极大 (好人死伤惨重/核心神职全错)</option>
+                </select>
+            </div>
+
+            <!-- 特殊状态 -->
+            <div>
+                <label class="block mb-3 font-bold text-red-400 text-lg">场上存在的可控变量 (多选)</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label class="flex items-center bg-gray-800 p-3 rounded-lg border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
+                        <input type="checkbox" id="has_drunk" class="w-5 h-5 text-red-600 rounded bg-gray-900 border-gray-600 focus:ring-red-500">
+                        <span class="ml-3">🍷 醉酒/中毒机制</span>
+                    </label>
+                    <label class="flex items-center bg-gray-800 p-3 rounded-lg border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
+                        <input type="checkbox" id="has_mad" class="w-5 h-5 text-red-600 rounded bg-gray-900 border-gray-600 focus:ring-red-500">
+                        <span class="ml-3">🤪 疯狂机制 (如洗脑师)</span>
+                    </label>
+                    <label class="flex items-center bg-gray-800 p-3 rounded-lg border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
+                        <input type="checkbox" id="has_rez" class="w-5 h-5 text-red-600 rounded bg-gray-900 border-gray-600 focus:ring-red-500">
+                        <span class="ml-3">⚰️ 死亡复活/免死判定</span>
+                    </label>
+                    <label class="flex items-center bg-gray-800 p-3 rounded-lg border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
+                        <input type="checkbox" id="has_outsider" class="w-5 h-5 text-red-600 rounded bg-gray-900 border-gray-600 focus:ring-red-500">
+                        <span class="ml-3">🃏 外乡人技能判定</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="analyze()" id="analyzeBtn" class="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 border border-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-3 text-lg">
+                <span>🔮 让 AI 分析并生成平衡策略</span>
+            </button>
+
+            <!-- Loading & Result -->
+            <div id="loading" class="hidden flex justify-center items-center gap-3 mt-8 text-gray-400">
+                <div class="spinner"></div>
+                <span>大恶魔正在推演命运的丝线...</span>
+            </div>
+
+            <div id="result" class="hidden mt-8">
+                <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl relative shadow-inner">
+                    <div class="absolute -top-3 left-6 bg-red-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">AI 说书人建议</div>
+                    <div id="advice-content" class="text-gray-300 whitespace-pre-line leading-relaxed text-lg mt-2"></div>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-center text-gray-600 mt-8 text-sm">此工具通过启发式算法协助说书人控制游戏节奏，请根据现场玩家体验进行主观微调。</p>
+    </div>
+
+    <script>
+        function analyze() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('analyzeBtn').classList.add('opacity-50');
+
+            setTimeout(() => {
+                const phase = document.getElementById('phase').value;
+                const adv = document.getElementById('advantage').value;
+                const hasDrunk = document.getElementById('has_drunk').checked;
+                const hasMad = document.getElementById('has_mad').checked;
+                const hasRez = document.getElementById('has_rez').checked;
+                const hasOutsider = document.getElementById('has_outsider').checked;
+
+                let advice = "";
+
+                if (adv === "good_strong") {
+                    advice += "⚠️ **当前诊断：好人阵营优势过大，游戏可能过早结束。**\\n\\n";
+                    advice += "🛠️ **核心策略：暗中扶持邪恶方，制造逻辑断层**\\n";
+                    advice += "1. **信息干扰**：停止给好人发放决定性的真实信息。\\n";
+                    
+                    if (hasDrunk) {
+                        advice += "2. **利用醉酒/中毒**：向受影响的关键神职（如共情者、送葬者）提供**极其合理但完全错误**的线索，引导他们去怀疑全场最清水的好人。\\n";
+                    }
+                    if (hasMad) {
+                        advice += "3. **疯狂制裁**：从严判定疯狂状态。如果被洗脑的玩家没有极其卖力地表演，立刻予以处决，以剥夺好人轮次。\\n";
+                    }
+                    if (hasRez) {
+                        advice += "4. **保留邪恶火种**：如果恶魔或核心爪牙面临处决或夜间死亡，果断动用任何可用的免死/转移机制保护他们。\\n";
+                    }
+                    
+                    if (phase === "early") {
+                        advice += "\\n⏱️ **阶段提醒 (前期)**：好人可能只是碰巧盲对，不要做得太明显。给恶魔一些能够建立安全身份的假信息，暗示爪牙去穿神职的衣服。";
+                    } else if (phase === "late") {
+                        advice += "\\n⏱️ **阶段提醒 (后期)**：赛点将至！如果好人已经锁死恶魔，立刻在当晚利用规则允许的极端机制（如造出多重死亡，或毒死关键验证位）制造混乱，逼迫好人在最后一天必须进行“二选一”的终极赌博。";
+                    }
+                } 
+                else if (adv === "evil_strong") {
+                    advice += "⚠️ **当前诊断：邪恶阵营完全控场，好人面临崩盘体验极差。**\\n\\n";
+                    advice += "🛠️ **核心策略：天降甘霖，为好人提供绝地反击的线索**\\n";
+                    advice += "1. **信息回调**：接下来的所有夜晚，只要规则允许，向未中毒的神职提供最核心、最直白的真实信息。\\n";
+                    
+                    if (hasDrunk) {
+                        advice += "2. **修正醉酒/中毒**：给中毒/醉酒的玩家发放“正确”或“无用但不致命”的信息。不要再让他们带偏大部队。\\n";
+                    }
+                    if (hasOutsider) {
+                        advice += "3. **善待外乡人**：对外乡人的负面技能进行“从宽”处理。例如：理发师不要真杀关键神位，畸形秀演员如果不小心走神了可以当作没看见。\\n";
+                    }
+                    if (hasRez) {
+                        advice += "4. **生命奇迹**：利用水手、旅店老板、和平主义者等机制，强行让一个高身份的好人活下来，作为好人的逻辑基石。\\n";
+                    }
+
+                    if (phase === "late") {
+                        advice += "\\n⏱️ **阶段提醒 (后期)**：这是好人最后的机会。考虑在白天投票环节，对好人的发言时间给予更多宽容；如果恶魔出现明显失误，不要帮恶魔圆谎。";
+                    }
+                } 
+                else {
+                    advice += "⚖️ **当前诊断：局势焦灼，两边势均力敌，游戏体验极佳。**\\n\\n";
+                    advice += "🛠️ **核心策略：维持现状，隐形旁观**\\n";
+                    advice += "1. **标准裁决**：完全按照标准概率和客观规则发放信息，无需偏袒任何一方。\\n";
+                    advice += "2. **关注边缘玩家**：场上可能有些玩家参与感较弱。通过一些非致命的夜间互动（例如：给他们分配一个看似神秘的假线索，或让他们成为技能的目标），拉升他们的参与感。\\n";
+                    
+                    if (hasDrunk) {
+                        advice += "3. **常规干扰**：维持常态的醉酒/中毒干扰，真假参半，让逻辑链保持韧性。\\n";
+                    }
+                    
+                    advice += "\\n💡 **说书人座右铭**：最好的控场就是让玩家感觉不到你在控场。让他们为自己的推理和欺诈欢呼！";
+                }
+
+                // Parse markdown-like bold syntax to HTML
+                advice = advice.replace(/\\*\\*(.*?)\\*\\*/g, '<strong class="text-white">$1</strong>');
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('advice-content').innerHTML = advice;
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('analyzeBtn').classList.remove('opacity-50');
+            }, 1500); // Simulate AI thinking time
+        }
+    </script>
+</body>
+</html>
