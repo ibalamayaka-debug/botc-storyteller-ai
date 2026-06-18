@@ -626,7 +626,7 @@
             const phaseSelect = document.getElementById('phase');
             const phaseText = phaseSelect.options[phaseSelect.selectedIndex].text;
             const nightPhaseSelect = document.getElementById('nightPhase');
-            const nightPhaseText = nightPhaseSelect.options[nightPhaseSelect.selectedIndex].text;
+            const nightPhaseSelectValue = nightPhaseSelect.value;
             const scriptSelect = document.getElementById('scriptSelect');
             const scriptName = SCRIPTS[scriptSelect.value].name;
             
@@ -637,7 +637,7 @@
                     body: JSON.stringify({
                         script: scriptName,
                         phase: phaseText,
-                        nightPhase: nightPhaseText,
+                        nightPhase: nightPhaseSelectValue,
                         grimoire: liveGrimoire
                     })
                 });
