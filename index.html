@@ -141,13 +141,22 @@
 
             <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl relative shadow-inner">
                 <div class="absolute -top-3 left-6 bg-purple-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">大模型场控分析</div>
-                <div class="mt-2">
-                    <label class="block mb-1 text-gray-400 text-sm">当前游戏阶段</label>
-                    <select id="phase" class="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded focus:ring-1 focus:ring-purple-500 outline-none text-sm">
-                        <option value="early">🌙 游戏前期 (信息收集中)</option>
-                        <option value="mid">🔥 游戏中期 (逻辑交锋期)</option>
-                        <option value="late">⚔️ 游戏后期 (决战)</option>
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div>
+                        <label class="block mb-1 text-gray-400 text-sm">当前夜晚</label>
+                        <select id="nightPhase" class="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded focus:ring-1 focus:ring-purple-500 outline-none text-sm">
+                            <option value="first">🌙 第一夜 (首夜行动顺序)</option>
+                            <option value="other">🌌 其他夜晚 (常规行动顺序)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-gray-400 text-sm">当前游戏阶段</label>
+                        <select id="phase" class="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded focus:ring-1 focus:ring-purple-500 outline-none text-sm">
+                            <option value="early">🌱 游戏前期 (信息收集中)</option>
+                            <option value="mid">🔥 游戏中期 (逻辑交锋期)</option>
+                            <option value="late">⚔️ 游戏后期 (决战赛点)</option>
+                        </select>
+                    </div>
                 </div>
                 <button onclick="analyzeBalance()" id="analyzeBtn" class="w-full mt-4 bg-purple-800 hover:bg-purple-700 text-white font-bold py-2 rounded shadow transition flex justify-center items-center gap-2">
                     <span>🔮 召唤大模型 (读取全场状态生成建议)</span>
@@ -616,13 +625,19 @@
 
             const phaseSelect = document.getElementById('phase');
             const phaseText = phaseSelect.options[phaseSelect.selectedIndex].text;
+            const nightPhaseSelect = document.getElementById('nightPhase');
+            const nightPhaseText = nightPhaseSelect.options[nightPhaseSelect.selectedIndex].text;
+            const scriptSelect = document.getElementById('scriptSelect');
+            const scriptName = SCRIPTS[scriptSelect.value].name;
             
             try {
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        script: scriptName,
                         phase: phaseText,
+                        nightPhase: nightPhaseText,
                         grimoire: liveGrimoire
                     })
                 });
