@@ -15,7 +15,7 @@
     </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 md:p-8 flex justify-center items-start">
-    <div class="max-w-2xl w-full bg-gray-900 border border-red-900 p-6 md:p-10 rounded-2xl shadow-2xl relative overflow-hidden mt-10">
+    <div class="max-w-3xl w-full bg-gray-900 border border-red-900 p-6 md:p-10 rounded-2xl shadow-2xl relative overflow-hidden mt-6">
         <!-- Decoration -->
         <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-800 via-red-500 to-red-800"></div>
         
@@ -30,7 +30,7 @@
 
         <!-- Setup Tab -->
         <div id="setupTab" class="space-y-6 block">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block mb-2 font-bold text-red-400">玩家人数 (8-15)</label>
                     <input type="number" id="playerCount" min="8" max="15" value="10" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
@@ -38,33 +38,38 @@
                 <div>
                     <label class="block mb-2 font-bold text-red-400">选择剧本</label>
                     <select id="scriptSelect" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
-                        <option value="tb">暗流涌动</option>
-                        <option value="bmr">暗月初升</option>
-                        <option value="snv">梦陨春宵</option>
+                        <option value="tb">暗流涌动 (Trouble Brewing)</option>
+                        <option value="bmr">暗月初升 (Bad Moon Rising)</option>
+                        <option value="snv">梦陨春宵 (Sects & Violets)</option>
                     </select>
                 </div>
             </div>
             
-            <div>
-                <label class="block mb-2 font-bold text-red-400">强制锁定角色 (逗号分隔，可选)</label>
-                <input type="text" id="lockedRoles" placeholder="例如: 小恶魔, 洗衣妇, 毒师" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
-                <p class="text-gray-500 text-sm mt-2">系统会自动补齐剩余角色并提供建议，包含改变外乡人数量的角色时会自动调整基础分配。</p>
+            <div class="pt-2">
+                <label class="block mb-3 font-bold text-red-400 flex items-center justify-between">
+                    <span>座位分配 (可强制锁定角色)</span>
+                    <span class="text-xs text-gray-500 font-normal">留空即为随机</span>
+                </label>
+                <div id="lockedRolesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <!-- Dropdowns will be generated here by JS -->
+                </div>
+                <p class="text-gray-500 text-xs mt-3">💡 系统会自动排重、补齐剩余角色并提供打法建议，包含【男爵】【方古】等影响外乡人数量的角色时会自动调整基础比例。</p>
             </div>
 
-            <button onclick="generateSetup()" id="genBtn" class="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 border border-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-3 text-lg">
+            <button onclick="generateSetup()" id="genBtn" class="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 border border-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-3 text-lg mt-4">
                 <span>🎲 随机生成并分析魔典</span>
             </button>
 
             <!-- Loading & Result -->
             <div id="genLoading" class="hidden flex justify-center items-center gap-3 mt-8 text-gray-400">
                 <div class="spinner"></div>
-                <span>正在翻阅魔典...</span>
+                <span>大恶魔正在翻阅魔典...</span>
             </div>
 
             <div id="genResult" class="hidden mt-8">
                 <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl relative shadow-inner">
                     <div class="absolute -top-3 left-6 bg-red-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">魔典配置清单</div>
-                    <div id="gen-content" class="text-gray-300 whitespace-pre-line leading-relaxed text-lg mt-2"></div>
+                    <div id="gen-content" class="text-gray-300 leading-relaxed text-base mt-2"></div>
                 </div>
             </div>
         </div>
@@ -114,7 +119,7 @@
                 </div>
             </div>
 
-            <button onclick="analyze()" id="analyzeBtn" class="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 border border-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-3 text-lg">
+            <button onclick="analyzeBalance()" id="analyzeBtn" class="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 border border-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-3 text-lg">
                 <span>🔮 让 AI 分析并生成平衡策略</span>
             </button>
 
@@ -127,12 +132,12 @@
             <div id="result" class="hidden mt-8">
                 <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl relative shadow-inner">
                     <div class="absolute -top-3 left-6 bg-red-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">AI 说书人建议</div>
-                    <div id="advice-content" class="text-gray-300 whitespace-pre-line leading-relaxed text-lg mt-2"></div>
+                    <div id="advice-content" class="text-gray-300 leading-relaxed text-base mt-2"></div>
                 </div>
             </div>
         </div>
         
-        <p class="text-center text-gray-600 mt-8 text-sm">此工具辅助说书人构建剧本和控制游戏节奏，请根据现场玩家体验主观微调。</p>
+        <p class="text-center text-gray-600 mt-8 text-xs">此工具辅助说书人构建剧本和控制游戏节奏，请根据现场玩家体验主观微调。</p>
     </div>
 
     <script>
@@ -166,6 +171,14 @@
             12: [7, 2, 2, 1], 13: [9, 0, 3, 1], 14: [9, 1, 3, 1], 15: [9, 2, 3, 1]
         };
 
+        // --- 初始化及事件绑定 ---
+        document.getElementById('playerCount').addEventListener('change', renderRoleDropdowns);
+        document.getElementById('scriptSelect').addEventListener('change', renderRoleDropdowns);
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            renderRoleDropdowns();
+        });
+
         // --- 选项卡切换 ---
         function switchTab(tabId) {
             document.getElementById('setupTab').classList.add('hidden');
@@ -175,6 +188,64 @@
 
             document.getElementById(tabId).classList.remove('hidden');
             document.getElementById('btn-' + tabId).className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-active";
+        }
+
+        // --- 动态渲染下拉菜单 ---
+        function renderRoleDropdowns() {
+            let count = parseInt(document.getElementById('playerCount').value);
+            if (isNaN(count) || count < 8) count = 8;
+            if (count > 15) count = 15;
+
+            const scriptKey = document.getElementById('scriptSelect').value;
+            const script = SCRIPTS[scriptKey];
+            const container = document.getElementById('lockedRolesContainer');
+            
+            // 记住之前的选择以避免重置
+            const currentSelections = [];
+            const selects = container.querySelectorAll('select');
+            selects.forEach(s => currentSelections.push(s.value));
+
+            container.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const selectWrap = document.createElement('div');
+                selectWrap.className = "relative";
+                
+                const select = document.createElement('select');
+                select.className = "w-full bg-gray-800 border border-gray-700 text-gray-300 text-sm p-2.5 rounded-lg focus:ring-2 focus:ring-red-500 outline-none appearance-none";
+                
+                let optionsHTML = `<option value="">🎲 随机 (座位 ${i+1})</option>`;
+                optionsHTML += `<optgroup label="👼 村民">` + script.townsfolk.map(r => `<option value="${r}">${r}</option>`).join('') + `</optgroup>`;
+                optionsHTML += `<optgroup label="🤡 外乡人">` + script.outsiders.map(r => `<option value="${r}">${r}</option>`).join('') + `</optgroup>`;
+                optionsHTML += `<optgroup label="😈 爪牙">` + script.minions.map(r => `<option value="${r}">${r}</option>`).join('') + `</optgroup>`;
+                optionsHTML += `<optgroup label="👿 恶魔">` + script.demons.map(r => `<option value="${r}">${r}</option>`).join('') + `</optgroup>`;
+                
+                select.innerHTML = optionsHTML;
+                
+                // 恢复之前的选择
+                if (currentSelections[i] && select.querySelector(`option[value="${currentSelections[i]}"]`)) {
+                    select.value = currentSelections[i];
+                    select.classList.add('text-white', 'border-red-800', 'bg-red-950');
+                }
+
+                select.addEventListener('change', function() {
+                    if(this.value) {
+                        this.classList.add('text-white', 'border-red-800', 'bg-red-950');
+                    } else {
+                        this.classList.remove('text-white', 'border-red-800', 'bg-red-950');
+                    }
+                });
+
+                selectWrap.appendChild(select);
+                
+                // Add a small dropdown arrow
+                const arrow = document.createElement('div');
+                arrow.className = "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400";
+                arrow.innerHTML = `<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>`;
+                selectWrap.appendChild(arrow);
+
+                container.appendChild(selectWrap);
+            }
         }
 
         // --- 洗牌算法 ---
@@ -202,52 +273,41 @@
             document.getElementById('genBtn').disabled = true;
 
             setTimeout(() => {
-                const count = parseInt(document.getElementById('playerCount').value);
+                let count = parseInt(document.getElementById('playerCount').value);
+                if (count < 8) count = 8;
+                if (count > 15) count = 15;
+
                 const scriptKey = document.getElementById('scriptSelect').value;
                 const script = SCRIPTS[scriptKey];
-                const rawLockedStr = document.getElementById('lockedRoles').value;
-                const lockedRaw = rawLockedStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
                 
-                // Validate limits
-                if (count < 8 || count > 15) {
-                    alert("玩家人数必须在 8 到 15 之间！");
-                    resetGenUI();
-                    return;
-                }
+                // 收集所有被锁定的角色
+                const selects = document.getElementById('lockedRolesContainer').querySelectorAll('select');
+                const lockedRaw = Array.from(selects).map(s => s.value).filter(v => v !== "");
+                const lockedUnique = [...new Set(lockedRaw)]; // 去重防呆
 
-                // Identify locked roles by type
-                let lockedT = [], lockedO = [], lockedM = [], lockedD = [], invalid = [];
-                lockedRaw.forEach(r => {
+                // 分类锁定的角色
+                let lockedT = [], lockedO = [], lockedM = [], lockedD = [];
+                lockedUnique.forEach(r => {
                     if (script.townsfolk.includes(r)) lockedT.push(r);
                     else if (script.outsiders.includes(r)) lockedO.push(r);
                     else if (script.minions.includes(r)) lockedM.push(r);
                     else if (script.demons.includes(r)) lockedD.push(r);
-                    else invalid.push(r);
                 });
 
-                if (invalid.length > 0) {
-                    alert("当前所选剧本中未找到以下角色：" + invalid.join(", ") + "\\n请检查错别字或确保该角色属于该剧本！");
-                    resetGenUI();
-                    return;
-                }
-
-                // Base distribution
+                // 基础分配
                 let [t_cnt, o_cnt, m_cnt, d_cnt] = [...DIST[count]];
 
-                // Adjust for abilities
-                const allLocked = [...lockedT, ...lockedO, ...lockedM, ...lockedD];
+                // 特殊技能调整
                 let adjustedStr = "";
-                
-                if (allLocked.includes("男爵")) { 
+                if (lockedUnique.includes("男爵")) { 
                     o_cnt += 2; t_cnt -= 2; 
                     adjustedStr += " 【男爵】使外乡人+2；"; 
                 }
-                if (allLocked.includes("方古")) { 
+                if (lockedUnique.includes("方古")) { 
                     o_cnt += 1; t_cnt -= 1; 
                     adjustedStr += " 【方古】使外乡人+1；"; 
                 }
-                if (allLocked.includes("教父")) { 
-                    // Godfather adds or removes an outsider. randomly adjust for AI simulation
+                if (lockedUnique.includes("教父")) { 
                     if (o_cnt === 0 || Math.random() > 0.5) { 
                         o_cnt += 1; t_cnt -= 1; 
                         adjustedStr += " 【教父】使得外乡人+1；";
@@ -257,10 +317,9 @@
                     }
                 }
 
-                // Boundaries
                 if (o_cnt < 0) o_cnt = 0;
 
-                // Make sure we don't exceed script max & accommodate locks
+                // 计算剩余需要的空位
                 const pickT = Math.max(0, t_cnt - lockedT.length);
                 const pickO = Math.max(0, o_cnt - lockedO.length);
                 const pickM = Math.max(0, m_cnt - lockedM.length);
@@ -271,64 +330,73 @@
                 const finalM = [...lockedM, ...pickRoles(script.minions, pickM, lockedM)];
                 const finalD = [...lockedD, ...pickRoles(script.demons, pickD, lockedD)];
 
-                // Update actual counts
-                t_cnt = finalT.length; o_cnt = finalO.length; m_cnt = finalM.length; d_cnt = finalD.length;
+                // 最终数量
+                t_cnt = finalT.length; 
+                o_cnt = finalO.length; 
+                m_cnt = finalM.length; 
+                d_cnt = finalD.length;
                 const totalActual = t_cnt + o_cnt + m_cnt + d_cnt;
 
-                // Construct Output
-                let out = `**【配置清单】** - ${script.name}\\n`;
-                out += `👥 **总人数**: ${totalActual}人 (村民${t_cnt} / 外乡人${o_cnt} / 爪牙${m_cnt} / 恶魔${d_cnt})\\n`;
+                // --- 组装 HTML 输出 ---
+                let html = `
+                    <div class="mb-4 pb-2 border-b border-gray-700">
+                        <h3 class="text-xl font-bold text-red-400 mb-1">【配置清单】 - ${script.name}</h3>
+                        <p class="text-gray-400 text-sm">👥 <span class="text-white font-bold">总人数</span>: ${totalActual}人 (村民${t_cnt} / 外乡人${o_cnt} / 爪牙${m_cnt} / 恶魔${d_cnt})</p>
+                    </div>
+                `;
                 
                 if (adjustedStr) {
-                    out += `*(注: 由于技能影响，基础比例发生改变：${adjustedStr})*\\n`;
+                    html += `<div class="mb-4 text-yellow-500 text-sm bg-yellow-900 bg-opacity-20 p-2 rounded border border-yellow-800">*(注: 由于技能影响，基础比例发生改变：${adjustedStr})*</div>`;
                 }
 
-                out += `\\n👼 **村民 (${t_cnt})**: ${finalT.join(", ")}\\n`;
-                out += `🤡 **外乡人 (${o_cnt})**: ${finalO.length > 0 ? finalO.join(", ") : "无"}\\n`;
-                out += `😈 **爪牙 (${m_cnt})**: ${finalM.join(", ")}\\n`;
-                out += `👿 **恶魔 (${d_cnt})**: ${finalD.join(", ")}\\n`;
+                html += `
+                    <div class="space-y-4 mb-8 bg-gray-900 p-5 rounded-xl border border-gray-700 shadow-inner">
+                        <div><span class="text-blue-400 font-bold">👼 村民 (${t_cnt}):</span> <span class="text-gray-300 ml-2">${finalT.join("， ")}</span></div>
+                        <div><span class="text-yellow-400 font-bold">🤡 外乡人 (${o_cnt}):</span> <span class="text-gray-300 ml-2">${finalO.length > 0 ? finalO.join("， ") : "无"}</span></div>
+                        <div><span class="text-purple-400 font-bold">😈 爪牙 (${m_cnt}):</span> <span class="text-gray-300 ml-2">${finalM.join("， ")}</span></div>
+                        <div><span class="text-red-500 font-bold">👿 恶魔 (${d_cnt}):</span> <span class="text-gray-300 ml-2">${finalD.join("， ")}</span></div>
+                    </div>
+                `;
 
                 // AI Synergy comments
-                out += `\\n**【AI 构筑解析】**\\n`;
+                html += `<h3 class="text-lg font-bold text-red-400 mb-3">【AI 构筑解析】</h3><ul class="space-y-3 text-gray-300 list-none pl-1">`;
                 
+                let aiComments = [];
                 if (scriptKey === "tb") {
                     if (finalD.includes("小恶魔")) {
-                        out += `- 针对【小恶魔】：小恶魔拥有自杀传刀的能力。`;
-                        if (finalM.includes("猩红女人")) out += `配合【猩红女人】的保底，让邪恶阵营有很大的容错率。\\n`;
-                        else out += `但本次没有【猩红女人】，恶魔的传刀需要更加谨慎。\\n`;
+                        let c = `<li>💡 <span class="text-white font-bold">针对【小恶魔】</span>：小恶魔拥有自杀传刀的能力。`;
+                        if (finalM.includes("猩红女人")) c += `配合【猩红女人】的保底，让邪恶阵营有很大的容错率。</li>`;
+                        else c += `但本次没有【猩红女人】，恶魔的传刀需要更加谨慎。</li>`;
+                        aiComments.push(c);
                     }
-                    if (finalT.includes("占卜师") && !finalO.includes("隐士")) out += `- 针对【占卜师】：场上没有【隐士】干扰，占卜师的信息会非常犀利，邪恶方需尽早处理。\\n`;
-                    if (finalT.includes("送葬者") && finalM.includes("间谍")) out += `- 针对【送葬者】：【间谍】的存在会让送葬者拿到错误信息，说书人可以巧妙利用这点制造逻辑断层。\\n`;
-                    if (finalM.includes("毒师")) out += `- 【毒师】的存在保证了好人无法无脑信任任何单一信息源，是邪恶方的核心利器。\\n`;
+                    if (finalT.includes("占卜师") && !finalO.includes("隐士")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【占卜师】</span>：场上没有【隐士】干扰，占卜师的信息会非常犀利，邪恶方需尽早处理。</li>`);
+                    if (finalT.includes("送葬者") && finalM.includes("间谍")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【送葬者】</span>：【间谍】的存在会让送葬者拿到错误信息，说书人可以巧妙利用这点制造逻辑断层。</li>`);
+                    if (finalM.includes("毒师")) aiComments.push(`<li>💡 <span class="text-white font-bold">强力干扰</span>：【毒师】的存在保证了好人无法无脑信任任何单一信息源，是邪恶方的核心利器。</li>`);
                 } else if (scriptKey === "bmr") {
-                    if (finalD.includes("普卡")) out += `- 针对【普卡】：普卡的毒会延时死亡。搭配此板子需要提醒中毒的村民不要盲目自信。\\n`;
-                    if (finalD.includes("僵奇怪")) out += `- 针对【僵奇怪】：它能伪装死亡。说书人需注意处理白天的处决反馈，不要轻易暗示死者真实身份。\\n`;
-                    if (finalT.includes("水手") || finalT.includes("愚者") || finalT.includes("茶艺师")) out += `- 【不死机制】：场上存在多种不死机制，这会成为好人盘逻辑的坚实基石，但也让刺客或恶魔的击杀更具威慑力。\\n`;
-                    if (finalT.includes("八卦") || finalT.includes("赌徒")) out += `- 【夜间死亡】：加入了能造成夜间额外死亡的好人角色，这将极大地掩盖恶魔的真实杀人轨迹。\\n`;
+                    if (finalD.includes("普卡")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【普卡】</span>：普卡的毒会延时死亡。搭配此板子需要提醒中毒的村民不要盲目自信。</li>`);
+                    if (finalD.includes("僵奇怪")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【僵奇怪】</span>：它能伪装死亡。说书人需注意处理白天的处决反馈，不要轻易暗示死者真实身份。</li>`);
+                    if (finalT.includes("水手") || finalT.includes("愚者") || finalT.includes("茶艺师")) aiComments.push(`<li>💡 <span class="text-white font-bold">不死机制</span>：场上存在多种不死机制，这会成为好人盘逻辑的坚实基石，但也让刺客或恶魔的击杀更具威慑力。</li>`);
+                    if (finalT.includes("八卦") || finalT.includes("赌徒")) aiComments.push(`<li>💡 <span class="text-white font-bold">夜间死亡</span>：加入了能造成夜间额外死亡的好人角色，这将极大地掩盖恶魔的真实杀人轨迹。</li>`);
                 } else if (scriptKey === "snv") {
-                    if (finalD.includes("涡流")) out += `- 针对【涡流】：所有好人得到的信息都是假的！说书人必须给出完全相反的信息，这将考验好人是否能快速发现涡流局。\\n`;
-                    if (finalD.includes("方古")) out += `- 针对【方古】：恶魔可以跳跃到外乡人身上。外乡人在此局中不仅是累赘，更是潜在的巨大威胁。\\n`;
-                    if (finalM.includes("麻脸巫婆") || finalM.includes("洗脑师")) out += `- 【强控制】：爪牙的控制力极强，可以通过改变身份或疯狂状态将好人的逻辑彻底撕裂。\\n`;
-                    if (finalT.includes("艺术家") || finalT.includes("学者")) out += `- 【信息爆发】：艺术家和学者能提供具有终结比赛能力的信息，邪恶方必须优先找到并解决他们。\\n`;
+                    if (finalD.includes("涡流")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【涡流】</span>：所有好人得到的信息都是假的！说书人必须给出完全相反的信息，这将考验好人是否能快速发现涡流局。</li>`);
+                    if (finalD.includes("方古")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【方古】</span>：恶魔可以跳跃到外乡人身上。外乡人在此局中不仅是累赘，更是潜在的巨大威胁。</li>`);
+                    if (finalM.includes("麻脸巫婆") || finalM.includes("洗脑师")) aiComments.push(`<li>💡 <span class="text-white font-bold">强控制</span>：爪牙的控制力极强，可以通过改变身份或疯狂状态将好人的逻辑彻底撕裂。</li>`);
+                    if (finalT.includes("艺术家") || finalT.includes("学者")) aiComments.push(`<li>💡 <span class="text-white font-bold">信息爆发</span>：艺术家和学者能提供具有终结比赛能力的信息，邪恶方必须优先找到并解决他们。</li>`);
                 }
 
-                out += `- **综合评价**：这个板子${Math.random() > 0.5 ? "对抗性很强，双方都有充足的操作空间。" : "极其考验逻辑推理，信息的真假交织将是游戏核心。"}开局后可在“场控平衡建议”动态调整局势。`;
+                aiComments.push(`<li>🎯 <span class="text-white font-bold">综合评价</span>：这个板子${Math.random() > 0.5 ? "对抗性很强，双方都有充足的操作空间。" : "极其考验逻辑推理，信息的真假交织将是游戏核心。"}开局后可在“场控平衡建议”动态调整局势。</li>`);
 
-                out = out.replace(/\\*\\*(.*?)\\*\\*/g, '<strong class="text-white">$1</strong>');
+                html += aiComments.join('') + `</ul>`;
 
                 document.getElementById('genLoading').classList.add('hidden');
                 document.getElementById('genResult').classList.remove('hidden');
-                document.getElementById('gen-content').innerHTML = out;
-                resetGenUI();
-            }, 1000);
+                document.getElementById('gen-content').innerHTML = html;
+                document.getElementById('genBtn').disabled = false;
+            }, 800);
         }
 
-        function resetGenUI() {
-            document.getElementById('genBtn').disabled = false;
-        }
-
-        // --- 场控分析 (现有) ---
-        function analyze() {
+        // --- 场控分析 (修复格式) ---
+        function analyzeBalance() {
             document.getElementById('result').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('analyzeBtn').disabled = true;
@@ -342,43 +410,55 @@
                 const hasRez = document.getElementById('has_rez').checked;
                 const hasOutsider = document.getElementById('has_outsider').checked;
 
-                let advice = "";
+                let html = "";
 
                 if (adv === "good_strong") {
-                    advice += "⚠️ **当前诊断：好人阵营优势过大，游戏可能过早结束。**\\n\\n";
-                    advice += "🛠️ **核心策略：暗中扶持邪恶方，制造逻辑断层**\\n";
-                    advice += "1. **信息干扰**：停止给好人发放决定性的真实信息。\\n";
-                    if (hasDrunk) advice += "2. **利用醉酒/中毒**：向受影响的关键神职提供**极其合理但完全错误**的线索。\\n";
-                    if (hasMad) advice += "3. **疯狂制裁**：从严判定疯狂状态，剥夺好人轮次。\\n";
-                    if (hasRez) advice += "4. **保留邪恶火种**：果断动用任何可用的免死/转移机制保护恶魔或核心爪牙。\\n";
-                    if (phase === "early") advice += "\\n⏱️ **阶段提醒 (前期)**：好人可能只是碰巧盲对。暗示爪牙去穿神职的衣服。";
-                    else if (phase === "late") advice += "\\n⏱️ **阶段提醒 (后期)**：赛点将至！如果好人锁死恶魔，立刻制造多重死亡或毒死关键验证位制造混乱。";
+                    html += `<div class="mb-5 p-4 bg-yellow-900 bg-opacity-30 border border-yellow-700 rounded-lg">⚠️ <span class="text-yellow-400 font-bold text-lg">当前诊断：好人阵营优势过大，游戏可能过早结束。</span></div>`;
+                    html += `<p class="mb-3"><span class="text-red-400 font-bold text-lg">🛠️ 核心策略：暗中扶持邪恶方，制造逻辑断层</span></p>`;
+                    html += `<ul class="list-disc pl-6 space-y-2 text-gray-300 mb-5">`;
+                    html += `<li><span class="text-white font-bold">信息干扰</span>：停止给好人发放决定性的真实信息。</li>`;
+                    if (hasDrunk) html += `<li><span class="text-white font-bold">利用醉酒/中毒</span>：向受影响的关键神职提供极其合理但完全错误的线索。</li>`;
+                    if (hasMad) html += `<li><span class="text-white font-bold">疯狂制裁</span>：从严判定疯狂状态，剥夺好人轮次。</li>`;
+                    if (hasRez) html += `<li><span class="text-white font-bold">保留邪恶火种</span>：果断动用任何可用的免死/转移机制保护恶魔或核心爪牙。</li>`;
+                    html += `</ul>`;
+                    
+                    if (phase === "early") {
+                        html += `<div class="p-3 bg-gray-800 rounded border border-gray-600 text-sm"><span class="text-white font-bold">⏱️ 阶段提醒 (前期)</span>：好人可能只是碰巧盲对。暗示爪牙去穿神职的衣服，不要做得太明显。</div>`;
+                    } else if (phase === "late") {
+                        html += `<div class="p-3 bg-gray-800 rounded border border-gray-600 text-sm"><span class="text-white font-bold">⏱️ 阶段提醒 (后期)</span>：赛点将至！如果好人锁死恶魔，立刻制造多重死亡或毒死关键验证位制造混乱，逼迫好人进行赌博。</div>`;
+                    }
                 } 
                 else if (adv === "evil_strong") {
-                    advice += "⚠️ **当前诊断：邪恶阵营完全控场，好人面临崩盘体验极差。**\\n\\n";
-                    advice += "🛠️ **核心策略：天降甘霖，为好人提供绝地反击的线索**\\n";
-                    advice += "1. **信息回调**：接下来的夜晚，向未中毒的神职提供最核心、最直白的真实信息。\\n";
-                    if (hasDrunk) advice += "2. **修正醉酒/中毒**：给中毒/醉酒的玩家发放“正确”或“无用但不致命”的信息。\\n";
-                    if (hasOutsider) advice += "3. **善待外乡人**：对外乡人的负面技能进行“从宽”处理。\\n";
-                    if (hasRez) advice += "4. **生命奇迹**：强行让一个高身份的好人活下来，作为好人的逻辑基石。\\n";
-                    if (phase === "late") advice += "\\n⏱️ **阶段提醒 (后期)**：这是好人最后的机会。白天投票给予更多宽容，如果恶魔失误，不要帮其圆谎。";
+                    html += `<div class="mb-5 p-4 bg-red-900 bg-opacity-30 border border-red-700 rounded-lg">⚠️ <span class="text-red-400 font-bold text-lg">当前诊断：邪恶阵营完全控场，好人面临崩盘体验极差。</span></div>`;
+                    html += `<p class="mb-3"><span class="text-blue-400 font-bold text-lg">🛠️ 核心策略：天降甘霖，为好人提供绝地反击的线索</span></p>`;
+                    html += `<ul class="list-disc pl-6 space-y-2 text-gray-300 mb-5">`;
+                    html += `<li><span class="text-white font-bold">信息回调</span>：接下来的夜晚，向未中毒的神职提供最核心、最直白的真实信息。</li>`;
+                    if (hasDrunk) html += `<li><span class="text-white font-bold">修正醉酒/中毒</span>：给中毒/醉酒的玩家发放“正确”或“无用但不致命”的信息。</li>`;
+                    if (hasOutsider) html += `<li><span class="text-white font-bold">善待外乡人</span>：对外乡人的负面技能进行“从宽”处理。</li>`;
+                    if (hasRez) html += `<li><span class="text-white font-bold">生命奇迹</span>：强行让一个高身份的好人活下来，作为好人的逻辑基石。</li>`;
+                    html += `</ul>`;
+                    
+                    if (phase === "late") {
+                        html += `<div class="p-3 bg-gray-800 rounded border border-gray-600 text-sm"><span class="text-white font-bold">⏱️ 阶段提醒 (后期)</span>：这是好人最后的机会。白天投票给予更多宽容，如果恶魔失误，不要帮其圆谎。</div>`;
+                    }
                 } 
                 else {
-                    advice += "⚖️ **当前诊断：局势焦灼，两边势均力敌，游戏体验极佳。**\\n\\n";
-                    advice += "🛠️ **核心策略：维持现状，隐形旁观**\\n";
-                    advice += "1. **标准裁决**：完全按照标准概率和客观规则发放信息。\\n";
-                    advice += "2. **关注边缘玩家**：通过非致命夜间互动拉升边缘玩家的参与感。\\n";
-                    if (hasDrunk) advice += "3. **常规干扰**：维持常态的醉酒/中毒干扰，真假参半。\\n";
-                    advice += "\\n💡 **说书人座右铭**：最好的控场就是让玩家感觉不到你在控场。让他们为自己的推理和欺诈欢呼！";
+                    html += `<div class="mb-5 p-4 bg-green-900 bg-opacity-20 border border-green-800 rounded-lg">⚖️ <span class="text-green-400 font-bold text-lg">当前诊断：局势焦灼，两边势均力敌，游戏体验极佳。</span></div>`;
+                    html += `<p class="mb-3"><span class="text-gray-300 font-bold text-lg">🛠️ 核心策略：维持现状，隐形旁观</span></p>`;
+                    html += `<ul class="list-disc pl-6 space-y-2 text-gray-300 mb-5">`;
+                    html += `<li><span class="text-white font-bold">标准裁决</span>：完全按照标准概率和客观规则发放信息。</li>`;
+                    html += `<li><span class="text-white font-bold">关注边缘玩家</span>：通过非致命夜间互动拉升边缘玩家的参与感。</li>`;
+                    if (hasDrunk) html += `<li><span class="text-white font-bold">常规干扰</span>：维持常态的醉酒/中毒干扰，真假参半。</li>`;
+                    html += `</ul>`;
+                    html += `<div class="p-3 bg-gray-800 rounded border border-gray-600 text-sm">💡 <span class="text-white font-bold">说书人座右铭</span>：最好的控场就是让玩家感觉不到你在控场。让他们为自己的推理和欺诈欢呼！</div>`;
                 }
 
-                advice = advice.replace(/\\*\\*(.*?)\\*\\*/g, '<strong class="text-white">$1</strong>');
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('result').classList.remove('hidden');
-                document.getElementById('advice-content').innerHTML = advice;
+                document.getElementById('advice-content').innerHTML = html;
                 document.getElementById('analyzeBtn').disabled = false;
                 document.getElementById('analyzeBtn').classList.remove('opacity-50');
-            }, 1500);
+            }, 1000);
         }
     </script>
 </body>
