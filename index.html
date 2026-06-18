@@ -140,31 +140,21 @@
             </div>
 
             <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl relative shadow-inner">
-                <div class="absolute -top-3 left-6 bg-purple-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">AI 场控求助</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div>
-                        <label class="block mb-1 text-gray-400 text-sm">局面倾向</label>
-                        <select id="advantage" class="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded focus:ring-1 focus:ring-purple-500 outline-none text-sm">
-                            <option value="good_strong">🔵 好人优势极大</option>
-                            <option value="balanced">⚖️ 势均力敌</option>
-                            <option value="evil_strong">🔴 邪恶优势极大</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-1 text-gray-400 text-sm">当前游戏阶段</label>
-                        <select id="phase" class="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded focus:ring-1 focus:ring-purple-500 outline-none text-sm">
-                            <option value="early">🌙 游戏前期 (信息收集中)</option>
-                            <option value="mid">🔥 游戏中期 (逻辑交锋期)</option>
-                            <option value="late">⚔️ 游戏后期 (决战)</option>
-                        </select>
-                    </div>
+                <div class="absolute -top-3 left-6 bg-purple-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">大模型场控分析</div>
+                <div class="mt-2">
+                    <label class="block mb-1 text-gray-400 text-sm">当前游戏阶段</label>
+                    <select id="phase" class="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded focus:ring-1 focus:ring-purple-500 outline-none text-sm">
+                        <option value="early">🌙 游戏前期 (信息收集中)</option>
+                        <option value="mid">🔥 游戏中期 (逻辑交锋期)</option>
+                        <option value="late">⚔️ 游戏后期 (决战)</option>
+                    </select>
                 </div>
                 <button onclick="analyzeBalance()" id="analyzeBtn" class="w-full mt-4 bg-purple-800 hover:bg-purple-700 text-white font-bold py-2 rounded shadow transition flex justify-center items-center gap-2">
-                    <span>🔮 生成局势平衡建议</span>
+                    <span>🔮 召唤大模型 (读取全场状态生成建议)</span>
                 </button>
                 <div id="balanceLoading" class="hidden flex justify-center items-center gap-2 mt-4 text-gray-400 text-sm">
                     <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
-                    <span>推演中...</span>
+                    <span>大模型推演命运的丝线中...</span>
                 </div>
                 <div id="balanceResult" class="hidden mt-4 text-sm text-gray-300 bg-gray-900 p-4 rounded border border-gray-700 whitespace-pre-line leading-relaxed">
                     <!-- Advice goes here -->
@@ -618,59 +608,44 @@
         }
 
         // --- Balance Analysis in Live Mode ---
-        function analyzeBalance() {
+        async function analyzeBalance() {
             document.getElementById('balanceResult').classList.add('hidden');
             document.getElementById('balanceLoading').classList.remove('hidden');
             document.getElementById('analyzeBtn').disabled = true;
             document.getElementById('analyzeBtn').classList.add('opacity-50');
 
-            setTimeout(() => {
-                const phase = document.getElementById('phase').value;
-                const adv = document.getElementById('advantage').value;
-                
-                // Read from live tags instead of checkboxes
-                let hasDrunk = false, hasMad = false, hasRez = false, hasOutsider = false;
-                const scriptKey = document.getElementById('scriptSelect').value;
-                const script = SCRIPTS[scriptKey];
-                
-                liveGrimoire.forEach(p => {
-                    if (p.tags.some(t => t.includes('醉酒') || t.includes('中毒'))) hasDrunk = true;
-                    if (p.tags.some(t => t.includes('疯狂'))) hasMad = true;
-                    if (script.outsiders.includes(p.role)) hasOutsider = true;
-                    if (["水手","弄臣","茶艺师","和平主义者","旅店老板"].includes(p.role)) hasRez = true;
+            const phaseSelect = document.getElementById('phase');
+            const phaseText = phaseSelect.options[phaseSelect.selectedIndex].text;
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phase: phaseText,
+                        grimoire: liveGrimoire
+                    })
                 });
-
-                let html = "";
-                if (adv === "good_strong") {
-                    html += `<span class="text-yellow-400 font-bold">⚠️ 好人优势极大</span>\n`;
-                    html += `🛠️ 核心策略：停止发放决定性的真实信息。\n`;
-                    if (hasDrunk) html += `🍷 场上存在醉酒/中毒，请向其提供极其合理但完全错误的线索，引导抗推。\n`;
-                    if (hasMad) html += `🤪 从严判定疯狂状态，随时准备处决以剥夺好人轮次。\n`;
-                    if (hasRez) html += `🛡️ 动用一切可用机制保护恶魔或核心爪牙免死。\n`;
-                    if (phase === "late") html += `⏱️ 赛点：如果恶魔已被锁死，立刻利用极端机制（多重死亡/毒死验证位）制造混乱，逼迫赌博。`;
-                } 
-                else if (adv === "evil_strong") {
-                    html += `<span class="text-red-400 font-bold">⚠️ 邪恶优势极大</span>\n`;
-                    html += `🛠️ 核心策略：天降甘霖，为好人提供绝地反击的线索。\n`;
-                    html += `✨ 接下来的夜晚，向清醒的神职提供最核心、直白的真实信息。\n`;
-                    if (hasDrunk) html += `🍷 给中毒/醉酒玩家发放“正确”或“无用但不致命”的信息，停止带偏。\n`;
-                    if (hasOutsider) html += `🤡 对外乡人的负面技能进行“从宽”处理。\n`;
-                    if (phase === "late") html += `⏱️ 赛点：白天投票给予更多宽容，恶魔失误时不要帮其圆谎。`;
-                } 
-                else {
-                    html += `<span class="text-green-400 font-bold">⚖️ 势均力敌</span>\n`;
-                    html += `🛠️ 核心策略：维持现状，完全按照标准概率和客观规则发放信息。\n`;
-                    html += `🎯 关注边缘玩家：通过非致命夜间互动拉升他们的参与感。\n`;
-                    if (hasDrunk) html += `🍷 维持常态的醉酒/中毒干扰，真假参半。\n`;
-                    html += `💡 最好的控场就是让玩家感觉不到你在控场。`;
-                }
-
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
                 document.getElementById('balanceLoading').classList.add('hidden');
                 document.getElementById('balanceResult').classList.remove('hidden');
-                document.getElementById('balanceResult').innerHTML = html;
+                
+                let formattedAdvice = data.advice.replace(/\n/g, '<br>');
+                formattedAdvice = formattedAdvice.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
+                document.getElementById('balanceResult').innerHTML = formattedAdvice;
+                
+            } catch (error) {
+                document.getElementById('balanceLoading').classList.add('hidden');
+                document.getElementById('balanceResult').classList.remove('hidden');
+                document.getElementById('balanceResult').innerHTML = '<span class="text-red-500 font-bold">❌ 大模型推演失败，请检查网络或稍后再试。</span>';
+            } finally {
                 document.getElementById('analyzeBtn').disabled = false;
                 document.getElementById('analyzeBtn').classList.remove('opacity-50');
-            }, 1000);
+            }
         }
     </script>
 </body>
