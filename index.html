@@ -152,10 +152,10 @@
             },
             "bmr": {
                 name: "暗月初升 (Bad Moon Rising)",
-                townsfolk: ["祖母", "水手", "侍女", "驱魔人", "旅店老板", "赌徒", "八卦", "侍臣", "教授", "吟游诗人", "茶艺师", "和平主义者", "愚者"],
-                outsiders: ["暴徒", "疯子", "走卒", "月之子"],
+                townsfolk: ["祖母", "水手", "侍女", "驱魔人", "旅店老板", "赌徒", "八卦", "侍臣", "教授", "吟游诗人", "茶艺师", "和平主义者", "弄臣"],
+                outsiders: ["提线木偶", "疯子", "蛊惑小鬼", "月之子"],
                 minions: ["教父", "魔鬼代言人", "刺客", "主谋"],
-                demons: ["僵奇怪", "普卡", "沙巴洛斯", "诺斯骨"]
+                demons: ["僵怖", "普卡", "沙巴洛斯", "珀"]
             },
             "snv": {
                 name: "梦陨春宵 (Sects & Violets)",
@@ -183,7 +183,7 @@
         function switchTab(tabId) {
             document.getElementById('setupTab').classList.add('hidden');
             document.getElementById('balanceTab').classList.add('hidden');
-            document.getElementById('btn-setupTab').className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-inactive";
+            document.getElementById('btn-setupTab').className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-active";
             document.getElementById('btn-balanceTab').className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-inactive";
 
             document.getElementById(tabId).classList.remove('hidden');
@@ -374,8 +374,8 @@
                     if (finalM.includes("毒师")) aiComments.push(`<li>💡 <span class="text-white font-bold">强力干扰</span>：【毒师】的存在保证了好人无法无脑信任任何单一信息源，是邪恶方的核心利器。</li>`);
                 } else if (scriptKey === "bmr") {
                     if (finalD.includes("普卡")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【普卡】</span>：普卡的毒会延时死亡。搭配此板子需要提醒中毒的村民不要盲目自信。</li>`);
-                    if (finalD.includes("僵奇怪")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【僵奇怪】</span>：它能伪装死亡。说书人需注意处理白天的处决反馈，不要轻易暗示死者真实身份。</li>`);
-                    if (finalT.includes("水手") || finalT.includes("愚者") || finalT.includes("茶艺师")) aiComments.push(`<li>💡 <span class="text-white font-bold">不死机制</span>：场上存在多种不死机制，这会成为好人盘逻辑的坚实基石，但也让刺客或恶魔的击杀更具威慑力。</li>`);
+                    if (finalD.includes("僵怖")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【僵怖】</span>：它能伪装死亡。说书人需注意处理白天的处决反馈，不要轻易暗示死者真实身份。</li>`);
+                    if (finalT.includes("水手") || finalT.includes("弄臣") || finalT.includes("茶艺师")) aiComments.push(`<li>💡 <span class="text-white font-bold">不死机制</span>：场上存在多种不死机制，这会成为好人盘逻辑的坚实基石，但也让刺客或恶魔的击杀更具威慑力。</li>`);
                     if (finalT.includes("八卦") || finalT.includes("赌徒")) aiComments.push(`<li>💡 <span class="text-white font-bold">夜间死亡</span>：加入了能造成夜间额外死亡的好人角色，这将极大地掩盖恶魔的真实杀人轨迹。</li>`);
                 } else if (scriptKey === "snv") {
                     if (finalD.includes("涡流")) aiComments.push(`<li>💡 <span class="text-white font-bold">针对【涡流】</span>：所有好人得到的信息都是假的！说书人必须给出完全相反的信息，这将考验好人是否能快速发现涡流局。</li>`);
