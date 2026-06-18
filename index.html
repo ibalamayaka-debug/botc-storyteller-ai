@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>血染钟楼 - AI说书人平衡助手</title>
+    <title>血染钟楼 - AI说书人助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
         body { font-family: 'Noto Serif SC', serif; background-color: #1a1a1a; background-image: radial-gradient(#2d1b1b 1px, transparent 1px); background-size: 20px 20px; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #e53e3e; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tab-active { background-color: #7f1d1d; border-color: #b91c1c; color: white; }
+        .tab-inactive { background-color: #1f2937; border-color: #374151; color: #9ca3af; }
     </style>
 </head>
 <body class="text-gray-200 min-h-screen p-4 md:p-8 flex justify-center items-start">
@@ -18,9 +20,57 @@
         <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-800 via-red-500 to-red-800"></div>
         
         <h1 class="text-3xl md:text-4xl font-black mb-2 text-center text-red-500 tracking-wider">血染钟楼</h1>
-        <h2 class="text-xl md:text-2xl font-bold mb-8 text-center text-gray-400">AI 说书人平衡助手</h2>
+        <h2 class="text-xl md:text-2xl font-bold mb-8 text-center text-gray-400">AI 说书人助手</h2>
         
-        <div class="space-y-6">
+        <!-- Tabs -->
+        <div class="flex space-x-2 mb-8 border-b border-gray-700 pb-4">
+            <button onclick="switchTab('setupTab')" id="btn-setupTab" class="flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-active">🎲 初始板子生成</button>
+            <button onclick="switchTab('balanceTab')" id="btn-balanceTab" class="flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-inactive">⚖️ 场控平衡建议</button>
+        </div>
+
+        <!-- Setup Tab -->
+        <div id="setupTab" class="space-y-6 block">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-2 font-bold text-red-400">玩家人数 (8-15)</label>
+                    <input type="number" id="playerCount" min="8" max="15" value="10" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                </div>
+                <div>
+                    <label class="block mb-2 font-bold text-red-400">选择剧本</label>
+                    <select id="scriptSelect" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                        <option value="tb">暗流涌动</option>
+                        <option value="bmr">暗月初升</option>
+                        <option value="snv">梦陨春宵</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block mb-2 font-bold text-red-400">强制锁定角色 (逗号分隔，可选)</label>
+                <input type="text" id="lockedRoles" placeholder="例如: 小恶魔, 洗衣妇, 毒师" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                <p class="text-gray-500 text-sm mt-2">系统会自动补齐剩余角色并提供建议，包含改变外乡人数量的角色时会自动调整基础分配。</p>
+            </div>
+
+            <button onclick="generateSetup()" id="genBtn" class="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 border border-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex justify-center items-center gap-3 text-lg">
+                <span>🎲 随机生成并分析魔典</span>
+            </button>
+
+            <!-- Loading & Result -->
+            <div id="genLoading" class="hidden flex justify-center items-center gap-3 mt-8 text-gray-400">
+                <div class="spinner"></div>
+                <span>正在翻阅魔典...</span>
+            </div>
+
+            <div id="genResult" class="hidden mt-8">
+                <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl relative shadow-inner">
+                    <div class="absolute -top-3 left-6 bg-red-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm">魔典配置清单</div>
+                    <div id="gen-content" class="text-gray-300 whitespace-pre-line leading-relaxed text-lg mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Tab -->
+        <div id="balanceTab" class="space-y-6 hidden">
             <!-- 游戏阶段 -->
             <div>
                 <label class="block mb-2 font-bold text-red-400 text-lg">当前游戏阶段</label>
@@ -82,10 +132,202 @@
             </div>
         </div>
         
-        <p class="text-center text-gray-600 mt-8 text-sm">此工具通过启发式算法协助说书人控制游戏节奏，请根据现场玩家体验进行主观微调。</p>
+        <p class="text-center text-gray-600 mt-8 text-sm">此工具辅助说书人构建剧本和控制游戏节奏，请根据现场玩家体验主观微调。</p>
     </div>
 
     <script>
+        // --- 核心角色数据 ---
+        const SCRIPTS = {
+            "tb": {
+                name: "暗流涌动 (Trouble Brewing)",
+                townsfolk: ["洗衣妇", "图书管理员", "调查员", "厨师", "共情者", "占卜师", "送葬者", "僧侣", "守鸦人", "处女", "杀手", "士兵", "镇长"],
+                outsiders: ["管家", "醉汉", "隐士", "圣徒"],
+                minions: ["毒师", "间谍", "猩红女人", "男爵"],
+                demons: ["小恶魔"]
+            },
+            "bmr": {
+                name: "暗月初升 (Bad Moon Rising)",
+                townsfolk: ["祖母", "水手", "侍女", "驱魔人", "旅店老板", "赌徒", "八卦", "侍臣", "教授", "吟游诗人", "茶艺师", "和平主义者", "愚者"],
+                outsiders: ["暴徒", "疯子", "走卒", "月之子"],
+                minions: ["教父", "魔鬼代言人", "刺客", "主谋"],
+                demons: ["僵奇怪", "普卡", "沙巴洛斯", "诺斯骨"]
+            },
+            "snv": {
+                name: "梦陨春宵 (Sects & Violets)",
+                townsfolk: ["钟表匠", "梦妖", "弄蛇人", "数学家", "卖花女孩", "城镇公告员", "神谕者", "学者", "裁缝", "哲学家", "艺术家", "杂耍演员", "智者"],
+                outsiders: ["突变异种", "理发师", "甜心", "呆瓜"],
+                minions: ["邪恶双子", "女巫", "洗脑师", "麻脸巫婆"],
+                demons: ["方古", "维戈莫提斯", "诺达许", "涡流"]
+            }
+        };
+
+        const DIST = {
+            8: [5, 1, 1, 1], 9: [5, 2, 1, 1], 10: [7, 0, 2, 1], 11: [7, 1, 2, 1],
+            12: [7, 2, 2, 1], 13: [9, 0, 3, 1], 14: [9, 1, 3, 1], 15: [9, 2, 3, 1]
+        };
+
+        // --- 选项卡切换 ---
+        function switchTab(tabId) {
+            document.getElementById('setupTab').classList.add('hidden');
+            document.getElementById('balanceTab').classList.add('hidden');
+            document.getElementById('btn-setupTab').className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-inactive";
+            document.getElementById('btn-balanceTab').className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-inactive";
+
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).className = "flex-1 py-3 px-4 rounded-xl font-bold text-center border transition-all tab-active";
+        }
+
+        // --- 洗牌算法 ---
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- 随机选取 ---
+        function pickRoles(pool, count, locked) {
+            const available = pool.filter(r => !locked.includes(r));
+            const selected = shuffle([...available]).slice(0, Math.max(0, count));
+            return selected;
+        }
+
+        // --- 生成初始板子 ---
+        function generateSetup() {
+            document.getElementById('genResult').classList.add('hidden');
+            document.getElementById('genLoading').classList.remove('hidden');
+            document.getElementById('genBtn').disabled = true;
+
+            setTimeout(() => {
+                const count = parseInt(document.getElementById('playerCount').value);
+                const scriptKey = document.getElementById('scriptSelect').value;
+                const script = SCRIPTS[scriptKey];
+                const rawLockedStr = document.getElementById('lockedRoles').value;
+                const lockedRaw = rawLockedStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                
+                // Validate limits
+                if (count < 8 || count > 15) {
+                    alert("玩家人数必须在 8 到 15 之间！");
+                    resetGenUI();
+                    return;
+                }
+
+                // Identify locked roles by type
+                let lockedT = [], lockedO = [], lockedM = [], lockedD = [], invalid = [];
+                lockedRaw.forEach(r => {
+                    if (script.townsfolk.includes(r)) lockedT.push(r);
+                    else if (script.outsiders.includes(r)) lockedO.push(r);
+                    else if (script.minions.includes(r)) lockedM.push(r);
+                    else if (script.demons.includes(r)) lockedD.push(r);
+                    else invalid.push(r);
+                });
+
+                if (invalid.length > 0) {
+                    alert("当前所选剧本中未找到以下角色：" + invalid.join(", ") + "\\n请检查错别字或确保该角色属于该剧本！");
+                    resetGenUI();
+                    return;
+                }
+
+                // Base distribution
+                let [t_cnt, o_cnt, m_cnt, d_cnt] = [...DIST[count]];
+
+                // Adjust for abilities
+                const allLocked = [...lockedT, ...lockedO, ...lockedM, ...lockedD];
+                let adjustedStr = "";
+                
+                if (allLocked.includes("男爵")) { 
+                    o_cnt += 2; t_cnt -= 2; 
+                    adjustedStr += " 【男爵】使外乡人+2；"; 
+                }
+                if (allLocked.includes("方古")) { 
+                    o_cnt += 1; t_cnt -= 1; 
+                    adjustedStr += " 【方古】使外乡人+1；"; 
+                }
+                if (allLocked.includes("教父")) { 
+                    // Godfather adds or removes an outsider. randomly adjust for AI simulation
+                    if (o_cnt === 0 || Math.random() > 0.5) { 
+                        o_cnt += 1; t_cnt -= 1; 
+                        adjustedStr += " 【教父】使得外乡人+1；";
+                    } else { 
+                        o_cnt -= 1; t_cnt += 1; 
+                        adjustedStr += " 【教父】使得外乡人-1；";
+                    }
+                }
+
+                // Boundaries
+                if (o_cnt < 0) o_cnt = 0;
+
+                // Make sure we don't exceed script max & accommodate locks
+                const pickT = Math.max(0, t_cnt - lockedT.length);
+                const pickO = Math.max(0, o_cnt - lockedO.length);
+                const pickM = Math.max(0, m_cnt - lockedM.length);
+                const pickD = Math.max(0, d_cnt - lockedD.length);
+
+                const finalT = [...lockedT, ...pickRoles(script.townsfolk, pickT, lockedT)];
+                const finalO = [...lockedO, ...pickRoles(script.outsiders, pickO, lockedO)];
+                const finalM = [...lockedM, ...pickRoles(script.minions, pickM, lockedM)];
+                const finalD = [...lockedD, ...pickRoles(script.demons, pickD, lockedD)];
+
+                // Update actual counts
+                t_cnt = finalT.length; o_cnt = finalO.length; m_cnt = finalM.length; d_cnt = finalD.length;
+                const totalActual = t_cnt + o_cnt + m_cnt + d_cnt;
+
+                // Construct Output
+                let out = `**【配置清单】** - ${script.name}\\n`;
+                out += `👥 **总人数**: ${totalActual}人 (村民${t_cnt} / 外乡人${o_cnt} / 爪牙${m_cnt} / 恶魔${d_cnt})\\n`;
+                
+                if (adjustedStr) {
+                    out += `*(注: 由于技能影响，基础比例发生改变：${adjustedStr})*\\n`;
+                }
+
+                out += `\\n👼 **村民 (${t_cnt})**: ${finalT.join(", ")}\\n`;
+                out += `🤡 **外乡人 (${o_cnt})**: ${finalO.length > 0 ? finalO.join(", ") : "无"}\\n`;
+                out += `😈 **爪牙 (${m_cnt})**: ${finalM.join(", ")}\\n`;
+                out += `👿 **恶魔 (${d_cnt})**: ${finalD.join(", ")}\\n`;
+
+                // AI Synergy comments
+                out += `\\n**【AI 构筑解析】**\\n`;
+                
+                if (scriptKey === "tb") {
+                    if (finalD.includes("小恶魔")) {
+                        out += `- 针对【小恶魔】：小恶魔拥有自杀传刀的能力。`;
+                        if (finalM.includes("猩红女人")) out += `配合【猩红女人】的保底，让邪恶阵营有很大的容错率。\\n`;
+                        else out += `但本次没有【猩红女人】，恶魔的传刀需要更加谨慎。\\n`;
+                    }
+                    if (finalT.includes("占卜师") && !finalO.includes("隐士")) out += `- 针对【占卜师】：场上没有【隐士】干扰，占卜师的信息会非常犀利，邪恶方需尽早处理。\\n`;
+                    if (finalT.includes("送葬者") && finalM.includes("间谍")) out += `- 针对【送葬者】：【间谍】的存在会让送葬者拿到错误信息，说书人可以巧妙利用这点制造逻辑断层。\\n`;
+                    if (finalM.includes("毒师")) out += `- 【毒师】的存在保证了好人无法无脑信任任何单一信息源，是邪恶方的核心利器。\\n`;
+                } else if (scriptKey === "bmr") {
+                    if (finalD.includes("普卡")) out += `- 针对【普卡】：普卡的毒会延时死亡。搭配此板子需要提醒中毒的村民不要盲目自信。\\n`;
+                    if (finalD.includes("僵奇怪")) out += `- 针对【僵奇怪】：它能伪装死亡。说书人需注意处理白天的处决反馈，不要轻易暗示死者真实身份。\\n`;
+                    if (finalT.includes("水手") || finalT.includes("愚者") || finalT.includes("茶艺师")) out += `- 【不死机制】：场上存在多种不死机制，这会成为好人盘逻辑的坚实基石，但也让刺客或恶魔的击杀更具威慑力。\\n`;
+                    if (finalT.includes("八卦") || finalT.includes("赌徒")) out += `- 【夜间死亡】：加入了能造成夜间额外死亡的好人角色，这将极大地掩盖恶魔的真实杀人轨迹。\\n`;
+                } else if (scriptKey === "snv") {
+                    if (finalD.includes("涡流")) out += `- 针对【涡流】：所有好人得到的信息都是假的！说书人必须给出完全相反的信息，这将考验好人是否能快速发现涡流局。\\n`;
+                    if (finalD.includes("方古")) out += `- 针对【方古】：恶魔可以跳跃到外乡人身上。外乡人在此局中不仅是累赘，更是潜在的巨大威胁。\\n`;
+                    if (finalM.includes("麻脸巫婆") || finalM.includes("洗脑师")) out += `- 【强控制】：爪牙的控制力极强，可以通过改变身份或疯狂状态将好人的逻辑彻底撕裂。\\n`;
+                    if (finalT.includes("艺术家") || finalT.includes("学者")) out += `- 【信息爆发】：艺术家和学者能提供具有终结比赛能力的信息，邪恶方必须优先找到并解决他们。\\n`;
+                }
+
+                out += `- **综合评价**：这个板子${Math.random() > 0.5 ? "对抗性很强，双方都有充足的操作空间。" : "极其考验逻辑推理，信息的真假交织将是游戏核心。"}开局后可在“场控平衡建议”动态调整局势。`;
+
+                out = out.replace(/\\*\\*(.*?)\\*\\*/g, '<strong class="text-white">$1</strong>');
+
+                document.getElementById('genLoading').classList.add('hidden');
+                document.getElementById('genResult').classList.remove('hidden');
+                document.getElementById('gen-content').innerHTML = out;
+                resetGenUI();
+            }, 1000);
+        }
+
+        function resetGenUI() {
+            document.getElementById('genBtn').disabled = false;
+        }
+
+        // --- 场控分析 (现有) ---
         function analyze() {
             document.getElementById('result').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
@@ -106,64 +348,37 @@
                     advice += "⚠️ **当前诊断：好人阵营优势过大，游戏可能过早结束。**\\n\\n";
                     advice += "🛠️ **核心策略：暗中扶持邪恶方，制造逻辑断层**\\n";
                     advice += "1. **信息干扰**：停止给好人发放决定性的真实信息。\\n";
-                    
-                    if (hasDrunk) {
-                        advice += "2. **利用醉酒/中毒**：向受影响的关键神职（如共情者、送葬者）提供**极其合理但完全错误**的线索，引导他们去怀疑全场最清水的好人。\\n";
-                    }
-                    if (hasMad) {
-                        advice += "3. **疯狂制裁**：从严判定疯狂状态。如果被洗脑的玩家没有极其卖力地表演，立刻予以处决，以剥夺好人轮次。\\n";
-                    }
-                    if (hasRez) {
-                        advice += "4. **保留邪恶火种**：如果恶魔或核心爪牙面临处决或夜间死亡，果断动用任何可用的免死/转移机制保护他们。\\n";
-                    }
-                    
-                    if (phase === "early") {
-                        advice += "\\n⏱️ **阶段提醒 (前期)**：好人可能只是碰巧盲对，不要做得太明显。给恶魔一些能够建立安全身份的假信息，暗示爪牙去穿神职的衣服。";
-                    } else if (phase === "late") {
-                        advice += "\\n⏱️ **阶段提醒 (后期)**：赛点将至！如果好人已经锁死恶魔，立刻在当晚利用规则允许的极端机制（如造出多重死亡，或毒死关键验证位）制造混乱，逼迫好人在最后一天必须进行“二选一”的终极赌博。";
-                    }
+                    if (hasDrunk) advice += "2. **利用醉酒/中毒**：向受影响的关键神职提供**极其合理但完全错误**的线索。\\n";
+                    if (hasMad) advice += "3. **疯狂制裁**：从严判定疯狂状态，剥夺好人轮次。\\n";
+                    if (hasRez) advice += "4. **保留邪恶火种**：果断动用任何可用的免死/转移机制保护恶魔或核心爪牙。\\n";
+                    if (phase === "early") advice += "\\n⏱️ **阶段提醒 (前期)**：好人可能只是碰巧盲对。暗示爪牙去穿神职的衣服。";
+                    else if (phase === "late") advice += "\\n⏱️ **阶段提醒 (后期)**：赛点将至！如果好人锁死恶魔，立刻制造多重死亡或毒死关键验证位制造混乱。";
                 } 
                 else if (adv === "evil_strong") {
                     advice += "⚠️ **当前诊断：邪恶阵营完全控场，好人面临崩盘体验极差。**\\n\\n";
                     advice += "🛠️ **核心策略：天降甘霖，为好人提供绝地反击的线索**\\n";
-                    advice += "1. **信息回调**：接下来的所有夜晚，只要规则允许，向未中毒的神职提供最核心、最直白的真实信息。\\n";
-                    
-                    if (hasDrunk) {
-                        advice += "2. **修正醉酒/中毒**：给中毒/醉酒的玩家发放“正确”或“无用但不致命”的信息。不要再让他们带偏大部队。\\n";
-                    }
-                    if (hasOutsider) {
-                        advice += "3. **善待外乡人**：对外乡人的负面技能进行“从宽”处理。例如：理发师不要真杀关键神位，畸形秀演员如果不小心走神了可以当作没看见。\\n";
-                    }
-                    if (hasRez) {
-                        advice += "4. **生命奇迹**：利用水手、旅店老板、和平主义者等机制，强行让一个高身份的好人活下来，作为好人的逻辑基石。\\n";
-                    }
-
-                    if (phase === "late") {
-                        advice += "\\n⏱️ **阶段提醒 (后期)**：这是好人最后的机会。考虑在白天投票环节，对好人的发言时间给予更多宽容；如果恶魔出现明显失误，不要帮恶魔圆谎。";
-                    }
+                    advice += "1. **信息回调**：接下来的夜晚，向未中毒的神职提供最核心、最直白的真实信息。\\n";
+                    if (hasDrunk) advice += "2. **修正醉酒/中毒**：给中毒/醉酒的玩家发放“正确”或“无用但不致命”的信息。\\n";
+                    if (hasOutsider) advice += "3. **善待外乡人**：对外乡人的负面技能进行“从宽”处理。\\n";
+                    if (hasRez) advice += "4. **生命奇迹**：强行让一个高身份的好人活下来，作为好人的逻辑基石。\\n";
+                    if (phase === "late") advice += "\\n⏱️ **阶段提醒 (后期)**：这是好人最后的机会。白天投票给予更多宽容，如果恶魔失误，不要帮其圆谎。";
                 } 
                 else {
                     advice += "⚖️ **当前诊断：局势焦灼，两边势均力敌，游戏体验极佳。**\\n\\n";
                     advice += "🛠️ **核心策略：维持现状，隐形旁观**\\n";
-                    advice += "1. **标准裁决**：完全按照标准概率和客观规则发放信息，无需偏袒任何一方。\\n";
-                    advice += "2. **关注边缘玩家**：场上可能有些玩家参与感较弱。通过一些非致命的夜间互动（例如：给他们分配一个看似神秘的假线索，或让他们成为技能的目标），拉升他们的参与感。\\n";
-                    
-                    if (hasDrunk) {
-                        advice += "3. **常规干扰**：维持常态的醉酒/中毒干扰，真假参半，让逻辑链保持韧性。\\n";
-                    }
-                    
+                    advice += "1. **标准裁决**：完全按照标准概率和客观规则发放信息。\\n";
+                    advice += "2. **关注边缘玩家**：通过非致命夜间互动拉升边缘玩家的参与感。\\n";
+                    if (hasDrunk) advice += "3. **常规干扰**：维持常态的醉酒/中毒干扰，真假参半。\\n";
                     advice += "\\n💡 **说书人座右铭**：最好的控场就是让玩家感觉不到你在控场。让他们为自己的推理和欺诈欢呼！";
                 }
 
-                // Parse markdown-like bold syntax to HTML
                 advice = advice.replace(/\\*\\*(.*?)\\*\\*/g, '<strong class="text-white">$1</strong>');
-
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('result').classList.remove('hidden');
                 document.getElementById('advice-content').innerHTML = advice;
                 document.getElementById('analyzeBtn').disabled = false;
                 document.getElementById('analyzeBtn').classList.remove('opacity-50');
-            }, 1500); // Simulate AI thinking time
+            }, 1500);
         }
     </script>
 </body>
