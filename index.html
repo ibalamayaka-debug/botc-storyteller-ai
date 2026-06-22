@@ -399,29 +399,37 @@
 
                 let [t_cnt, o_cnt, m_cnt, d_cnt] = [...DIST[count]];
                 let adjustedStr = "";
-                
-                if (lockedUnique.includes("男爵")) { o_cnt += 2; t_cnt -= 2; adjustedStr += " 【男爵】使外乡人+2；"; }
-                if (lockedUnique.includes("方古")) { o_cnt += 1; t_cnt -= 1; adjustedStr += " 【方古】使外乡人+1；"; }
-                if (lockedUnique.includes("教父")) { 
-                    if (o_cnt === 0 || Math.random() > 0.5) { o_cnt += 1; t_cnt -= 1; adjustedStr += " 【教父】使外乡人+1；"; } 
-                    else { o_cnt -= 1; t_cnt += 1; adjustedStr += " 【教父】使外乡人-1；"; }
-                }
-                if (o_cnt < 0) o_cnt = 0;
 
-                const pickT = Math.max(0, t_cnt - lockedT.length);
-                const pickO = Math.max(0, o_cnt - lockedO.length);
+                // ========== 两阶段生成：先确定爪牙和恶魔，再调整村民/外乡人 ==========
+                
+                // 阶段1: 先补齐爪牙和恶魔（因为它们可能影响村民/外乡人配比）
                 const pickM = Math.max(0, m_cnt - lockedM.length);
                 const pickD = Math.max(0, d_cnt - lockedD.length);
-
-                const generatedT = pickRoles(script.townsfolk, pickT, lockedT);
-                const generatedO = pickRoles(script.outsiders, pickO, lockedO);
                 const generatedM = pickRoles(script.minions, pickM, lockedM);
                 const generatedD = pickRoles(script.demons, pickD, lockedD);
+                const finalM = [...lockedM, ...generatedM];
+                const finalD = [...lockedD, ...generatedD];
+
+                // 阶段2: 根据最终确定的爪牙和恶魔来调整村民/外乡人配比
+                // 无论男爵是用户锁定的还是随机抽到的，都要生效
+                if (finalM.includes("男爵")) { o_cnt += 2; t_cnt -= 2; adjustedStr += " 【男爵】使外乡人+2，村民-2；"; }
+                if (finalD.includes("方古")) { o_cnt += 1; t_cnt -= 1; adjustedStr += " 【方古】使外乡人+1，村民-1；"; }
+                if (finalM.includes("教父")) { 
+                    if (o_cnt === 0 || Math.random() > 0.5) { o_cnt += 1; t_cnt -= 1; adjustedStr += " 【教父】使外乡人+1，村民-1；"; } 
+                    else { o_cnt -= 1; t_cnt += 1; adjustedStr += " 【教父】使外乡人-1，村民+1；"; }
+                }
+                if (t_cnt < 0) t_cnt = 0;
+                if (o_cnt < 0) o_cnt = 0;
+
+                // 阶段3: 根据调整后的配比补齐村民和外乡人
+                const pickT = Math.max(0, t_cnt - lockedT.length);
+                const pickO = Math.max(0, o_cnt - lockedO.length);
+                const generatedT = pickRoles(script.townsfolk, pickT, lockedT);
+                const generatedO = pickRoles(script.outsiders, pickO, lockedO);
 
                 const finalT = [...lockedT, ...generatedT];
                 const finalO = [...lockedO, ...generatedO];
-                const finalM = [...lockedM, ...generatedM];
-                const finalD = [...lockedD, ...generatedD];
+
 
                 // Save deck state for next step
                 generatedDeck = [...finalT, ...finalO, ...finalM, ...finalD];
